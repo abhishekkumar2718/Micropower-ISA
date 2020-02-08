@@ -2,7 +2,14 @@
 #include <vector>
 #include <fstream>
 
-int main(int argc, char *argv[]){
+#include "processing.h"
+#include "label.h"
+#include "symbol_table.h"
+
+const int DEBUG = 1;
+
+int main(int argc, char *argv[])
+{
   if (argc != 2){
     std::cout<<"Invalid number of arguments!"<<std::endl;
     std::cout<<"usage: u_asm filename"<<std::endl;
@@ -21,8 +28,19 @@ int main(int argc, char *argv[]){
   std::vector<std::string>lines;
   std::string line;
 
+  std::vector<Label> labels;
+
   while (getline(asm_filestream, line))
     lines.push_back(line);
+
+  // Process lines into labels, directives, and instructions
+  process_lines(lines, labels);
+
+  if (DEBUG){
+    std::cout<<"Labels:"<<std::endl;
+    for (auto label: labels)
+      std::cout<<label<<std::endl;
+  }
 
   return 0;
 }
