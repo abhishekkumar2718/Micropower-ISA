@@ -22,4 +22,7 @@ clean:
 	@echo " Cleaning..."; 
 	@echo " $(RM) -r $(BUILDDIR) $(TARGET)"; $(RM) -r $(BUILDDIR) $(TARGET)
 
+test: $(TARGET)
+	@bash test.sh
+
 .PHONY: clean
