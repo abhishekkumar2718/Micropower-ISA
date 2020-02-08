@@ -36,11 +36,10 @@ int main(int argc, char *argv[])
   // Process lines into labels, directives, and instructions
   process_lines(lines, labels);
 
-  if (DEBUG){
-    std::cout<<"Labels:"<<std::endl;
-    for (auto label: labels)
-      std::cout<<label<<std::endl;
-  }
+  auto symbol_table = SymbolTable(labels);
+
+  if (DEBUG)
+    std::cout<<symbol_table<<std::endl;
 
   return 0;
 }

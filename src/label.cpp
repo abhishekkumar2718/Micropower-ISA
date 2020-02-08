@@ -78,7 +78,7 @@ unsigned int Label::n_elements() const
     return std::count(expr.begin(), expr.end(), ',') + 1;
   }
   else if (data_type == "asciiz")
-    return expr.size();
+    return expr.size() + 1;
 
   return 0;
 }
@@ -92,4 +92,60 @@ bool Label::valid_data_type() const
 {
   return data_type == "byte" || data_type == "half_word" || data_type == "word"
     || data_type == "asciiz";
+}
+
+void Label::fill(char* base_address) const
+{
+  // For empty expressions
+  if (!expr.size())
+  {
+    // Fill the memory with zeroes
+    std::fill(base_address, base_address + size(), '\0');
+    return ;
+  }
+
+  if (data_type == "byte" || data_type == "asciiz")
+  {
+    // Copy characters from expression
+    for (int i = 0; i < expr.size(); ++i)
+      base_address[i] = expr[i];
+
+    // ASCII strings are null terminated
+    if (data_type == "asciiz")
+      base_address[expr.size()] = '\0';
+  }
+  else if (data_type == "word")
+  {
+    // Typecast as integer for easy conversion
+    int *i_base = (int *) base_address;
+    bool neg = false;
+    unsigned int offset = 0;
+    int sum = 0;
+
+    // Add a comma at the end as sentinel value
+    auto expression = expr + ",";
+
+    for (int i = 0; i < expression.size(); ++i)
+    {
+      // Skip whitespaces
+      if (expression[i] == ' ')
+        continue;
+
+      sum = 0;
+      neg = false;
+
+      // If first character is a minus sign
+      if (expression[i] == '-')
+      {
+        neg = true;
+        ++i;
+      }
+
+      // Building the number
+      while(expression[i] != ' ' && expression[i] != ',')
+        sum = sum * 10 + (expression[i++] - '0');
+
+      i_base[offset++] = neg ? -1 * sum : sum;
+    }
+  }
 }

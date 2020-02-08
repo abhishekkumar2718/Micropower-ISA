@@ -25,6 +25,9 @@ class Label
 
     // Size occupied by the label
     unsigned int size() const;
+
+    // Initialize expression at given memory address
+    void fill(char*) const;
 };
 
 #endif
