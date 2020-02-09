@@ -5,29 +5,20 @@
 #include <map>
 
 #include "label.h"
-
-typedef unsigned int Offset;
-typedef unsigned int Size;
-
-struct Record
-{
-  Symbol symbol;
-  Offset offset;
-  Size   size;
-
-  Record(Symbol sym, Offset o, Size s): symbol(sym), offset(o), size(s) {}
-};
+#include "record.h"
 
 class SymbolTable
 {
   private:
     std::vector<Record> records;
-    char *base_address;
+    char *data_base_address;
     int table_size(const std::vector<Label>&);
   public:
-    SymbolTable(const std::vector<Label>&);
-    friend std::ostream& operator<<(std::ostream&, const SymbolTable&);
+    ~SymbolTable(){ delete[] data_base_address; };
+
+    void initialize_data_labels(const std::vector<Label>&);
     bool empty() const { return records.empty(); };
+    friend std::ostream& operator<<(std::ostream&, const SymbolTable&);
 };
 
 #endif

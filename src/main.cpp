@@ -36,7 +36,9 @@ int main(int argc, char *argv[])
   // Process lines into labels, directives, and instructions
   process_lines(lines, labels);
 
-  auto symbol_table = SymbolTable(labels);
+  auto symbol_table = SymbolTable();
+
+  symbol_table.initialize_data_labels(labels);
 
   if (DEBUG)
     std::cout<<symbol_table<<std::endl;
