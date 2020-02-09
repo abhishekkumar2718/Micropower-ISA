@@ -1,3 +1,8 @@
+/*
+ Symbol table stores base address and offsets of labels to calculate
+ their address.
+ */
+
 #ifndef SYMBOL_TABLE_H
 #define SYMBOL_TABLE_H
 

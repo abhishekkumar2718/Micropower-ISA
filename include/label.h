@@ -1,21 +1,22 @@
+/*
+ Labels in assembly are equivalent to variables are in other programming
+ langauges. They have an identify (`symbol`), data type and possibly
+ initialisation expression (`expr`).
+ */
 #ifndef LABEL_H
 #define LABEL_H
-
-typedef std::string Symbol;
-typedef std::string Datatype;
 
 class Label
 {
   private:
-    Datatype data_type;
+    std::string data_type;
     std::string expr;
 
     bool valid_data_type() const;
   public:
-    // Symbol (i.e name of the label)
-    Symbol symbol;
+    std::string symbol;
+
     Label(const std::string);
-    friend std::ostream& operator<<(std::ostream&, const Label&);
 
     // Size of each element
     unsigned int element_size() const;
@@ -28,6 +29,8 @@ class Label
 
     // Initialize expression at given memory address
     void fill(char*) const;
+
+    friend std::ostream& operator<<(std::ostream&, const Label&);
 };
 
 #endif
