@@ -1,13 +1,12 @@
 #include <iostream>
 #include <vector>
-#include <fstream>
 
 #include "processing.h"
 #include "symbol_table.h"
 
 int main(int argc, char *argv[])
 {
-  bool DEBUG = false, STEP_RUN = false;
+  bool debug_mode = false, step_run = false;
 
   if (argc < 2)
   {
@@ -21,38 +20,22 @@ int main(int argc, char *argv[])
     auto arg = std::string(argv[i]);
 
     if (arg == "--step-run")
-      STEP_RUN = true;
+      step_run = true;
     else if (arg == "--debug")
-      DEBUG = true;
+      debug_mode = true;
     else
       throw std::invalid_argument(argv[i]);
   }
 
-  std::ifstream asm_filestream(argv[1]);
-
-  if (!asm_filestream)
-  {
-    std::cout<<"Unable to open source file!"<<std::endl;
-    exit(1);
-  }
-
-  // TODO: Add more validations for file
-
-  std::vector<std::string>lines;
-  std::string line;
-
-  while (getline(asm_filestream, line))
-    lines.push_back(line);
-
-
-  preprocess_lines(lines);
+  // Read source file
+  auto lines = read_file(argv[1]);
 
   char *gp = new char[50];
 
   // Generate symbol table in the first pass.
   auto symbol_table = SymbolTable(lines, gp);
 
-  if (DEBUG)
+  if (debug_mode)
     std::cout<<symbol_table<<std::endl;
 
   return 0;
