@@ -4,6 +4,7 @@
 #include "processing.h"
 #include "symbol_table.h"
 #include "memory.h"
+#include "register.h"
 
 int main(int argc, char *argv[])
 {
@@ -31,12 +32,13 @@ int main(int argc, char *argv[])
   // Read source file
   auto lines = read_file(argv[1]);
 
-  char *text_segment, *global_pointer, *stack_pointer;
+  auto registers = initialize_registers();
 
-  allocate_memory(text_segment, global_pointer, stack_pointer);
+  char *text_segment = allocate_memory(registers[gp], registers[sp]);
 
   // Generate symbol table in the first pass.
-  auto symbol_table = SymbolTable(lines, global_pointer);
+  // Static data segments begins at global pointer i.e text_segment + offset
+  auto symbol_table = SymbolTable(lines, text_segment + registers[gp]);
 
   if (debug_mode)
     std::cout<<symbol_table<<std::endl;
