@@ -3,6 +3,7 @@
 
 #include "processing.h"
 #include "symbol_table.h"
+#include "memory.h"
 
 int main(int argc, char *argv[])
 {
@@ -30,13 +31,17 @@ int main(int argc, char *argv[])
   // Read source file
   auto lines = read_file(argv[1]);
 
-  char *gp = new char[50];
+  char *text_segment, *global_pointer, *stack_pointer;
+
+  allocate_memory(text_segment, global_pointer, stack_pointer);
 
   // Generate symbol table in the first pass.
-  auto symbol_table = SymbolTable(lines, gp);
+  auto symbol_table = SymbolTable(lines, global_pointer);
 
   if (debug_mode)
     std::cout<<symbol_table<<std::endl;
+
+  deallocate_memory(text_segment);
 
   return 0;
 }
