@@ -5,8 +5,19 @@
 #ifndef PROCESSING_H
 #define PROCESSING_H
 
-#include "label.h"
+#include<string>
 
-// Process source text into labels.
-void process_lines(const std::vector<std::string>, std::vector<Label>&);
+void preprocess_lines(std::vector<std::string>&);
+
+// Check if given line is a data label
+bool is_data_label(const std::string&);
+
+// Check if given line is a text label
+bool is_text_label(const std::string&);
+
+// Check if given line is an assembly directive
+bool is_assembly_directive(const std::string&);
+
+// Check if given line is an assembly directive
+bool is_comment(const std::string&);
 #endif

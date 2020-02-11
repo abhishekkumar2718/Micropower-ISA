@@ -1,36 +1,31 @@
 /*
- Labels in assembly are equivalent to variables are in other programming
- langauges. They have an identify (`symbol`), data type and possibly
- initialisation expression (`expr`).
+ Labels are rows in the symbol table - A nice abstraction to avoid nested pairs.
  */
+
 #ifndef LABEL_H
 #define LABEL_H
 
-class Label
+#include<string>
+
+typedef std::string Symbol;
+
+enum class Section{Data, Text};
+
+struct Label
 {
-  private:
-    std::string data_type;
-    std::string expr;
+  Symbol  symbol;
+  Section section;
 
-    bool valid_data_type() const;
-  public:
-    std::string symbol;
+  // Offset from data segment base address or address base
+  size_t  offset;
+  // Memory occupied - 0 for all text labels
+  size_t  size;
 
-    Label(const std::string);
+  // Constructor for data labels
+  Label(const std::string&, char*, size_t);
 
-    // Size of each element
-    unsigned int element_size() const;
-
-    // Number of elements
-    unsigned int n_elements() const;
-
-    // Size occupied by the label
-    unsigned int size() const;
-
-    // Initialize expression at given memory address
-    void fill(char*) const;
-
-    friend std::ostream& operator<<(std::ostream&, const Label&);
+  // Constructor for text labels
+  Label(Symbol sym, size_t o): 
+    symbol(sym), offset(o), size(0), section(Section::Text) {}
 };
-
 #endif

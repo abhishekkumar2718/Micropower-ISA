@@ -3,7 +3,6 @@
 #include <fstream>
 
 #include "processing.h"
-#include "label.h"
 #include "symbol_table.h"
 
 int main(int argc, char *argv[])
@@ -42,17 +41,16 @@ int main(int argc, char *argv[])
   std::vector<std::string>lines;
   std::string line;
 
-  std::vector<Label> labels;
-
   while (getline(asm_filestream, line))
     lines.push_back(line);
 
-  // Process lines into labels, directives, and instructions
-  process_lines(lines, labels);
 
-  auto symbol_table = SymbolTable();
+  preprocess_lines(lines);
 
-  symbol_table.initialize_data_labels(labels);
+  char *gp = new char[50];
+
+  // Generate symbol table in the first pass.
+  auto symbol_table = SymbolTable(lines, gp);
 
   if (DEBUG)
     std::cout<<symbol_table<<std::endl;

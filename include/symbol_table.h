@@ -10,19 +10,20 @@
 #include <map>
 
 #include "label.h"
-#include "record.h"
 
 class SymbolTable
 {
   private:
-    std::vector<Record> records;
-    char *data_base_address;
-    int table_size(const std::vector<Label>&);
-  public:
-    ~SymbolTable(){ delete[] data_base_address; };
+    // TODO: Use map<Symbol, ...> instead of vector for faster search
+    std::vector<Label> labels;
 
-    void initialize_data_labels(const std::vector<Label>&);
-    bool empty() const { return records.empty(); };
+    char *data_segment_base;
+  public:
+    // Generate symbol table - Create label-offset pairs and
+    // initialize variables (if given)
+    SymbolTable(const std::vector<std::string>&, char*);
+
+    bool empty() const { return labels.empty(); };
     friend std::ostream& operator<<(std::ostream&, const SymbolTable&);
 };
 

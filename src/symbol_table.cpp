@@ -1,24 +1,41 @@
 #include <iostream>
-#include <utility> // make_pair()
+#include <iomanip>
+#include <algorithm>
 
 #include "symbol_table.h"
+#include "processing.h"
 
-void SymbolTable::initialize_data_labels(const std::vector<Label>& labels)
+// Generate the symbol table - Initializing values if given expressions
+SymbolTable::SymbolTable(const std::vector<std::string>& lines, char* gp)
+  : data_segment_base(gp)
 {
-  unsigned int offset = 0;
+  size_t offset = 0;
+  unsigned int instruction_count = 0;
 
-  data_base_address = new char[table_size(labels)];
-
-  for (auto label: labels)
+  for (auto line: lines)
   {
-    // Make an entry in symbol table
-    records.push_back(Record(label.symbol, offset, Section::Data, label.size()));
+    if (is_data_label(line))
+    {
+      // Format - symbol: .data_type [intialisation_expression]
 
-    // Fill the values into base address
-    label.fill(data_base_address + offset);
+      // Initialize a label
+      Label l(line, gp, offset);
+      labels.push_back(l);
 
-    // Adjust the offset
-    offset += label.size();
+      offset += l.size;
+    }
+    else if (is_text_label(line))
+    {
+      // Format - symbol:
+
+      // Copy upto colon
+      auto symbol = line.substr(0, line.size() - 1);
+
+      labels.push_back(Label(symbol, instruction_count));
+    }
+    else if (!is_assembly_directive(line))
+      // Neither label or directive - Must be an instruction
+      ++instruction_count;
   }
 }
 
@@ -27,33 +44,28 @@ std::ostream& operator<<(std::ostream& os, const SymbolTable& symbol_table)
   if (symbol_table.empty())
     return os;
 
-  char *base;
-  os << "Label" << '\t' << "Offset" << '\t' << "Section" << '\t' << "Size"
-    << std::endl;
+  os << std::left << std::setw(30) << "Label" << std::internal
+    << "Offset" << " " << "Section" << " " << "Size" << std::endl;
 
-  for (auto const& record: symbol_table.records)
+  char* base;
+  for (auto const& label: symbol_table.labels)
   {
+    os << std::left << std::setw(30) << label.symbol << std::setw(7) <<
+      label.offset << std::setw(7);
 
-    os << record;
-
-    // Print hex values stored if record is a data label
-    if (record.section == Section::Data)
+    if (label.section == Section::Data)
     {
-      base = symbol_table.data_base_address + record.offset;
-      for (int i = 0; i < record.size; ++i)
+      base = symbol_table.data_segment_base + label.offset;
+
+      os << "Data" << " " << label.size << std::endl;
+      for (int i = 0; i < label.size; ++i)
         os << std::hex << int(*(base + i)) << " ";
-      os << std::endl;
+
+      os << std::dec << std::endl;
     }
+    else if (label.section == Section::Text)
+      os << "Text" << std :: endl;
   }
 
   return os;
-}
-
-int SymbolTable::table_size(const std::vector<Label>& labels)
-{
-  unsigned int table_size = 0;
-  for (auto label: labels)
-    table_size += label.element_size() * label.n_elements();
-
-  return table_size;
 }

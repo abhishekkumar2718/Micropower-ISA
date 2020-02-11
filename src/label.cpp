@@ -1,151 +1,104 @@
 #include <iostream>
-#include <algorithm>
 
 #include "label.h"
 
-// Format:
-// symbol: .data_type [initial_expression]
-Label::Label(const std::string line)
+size_t data_type_size(const std::string&);
+
+// Constructor for data labels
+Label::Label(const std::string &line, char* data_segment_base, size_t offset)
+  : offset(offset), section(Section::Data)
 {
-  // First non whitespace character
-  int fchar = -1;
+  // symbol - Copy upto colon
+  auto colon_idx = line.find(':', 0);
+  symbol = line.substr(0, colon_idx);
 
-  for(int i = 0; i < line.size(); ++i){
-    if(line[i] != ' ' && fchar == -1)
-      fchar = i;
+  // data_type - Copy after dot upto first whitespace
+  auto dot_idx = line.find('.', 0);
 
-    // Copy characters from first non whitespace character upto colon.
-    if(line[i] == ':')
-      symbol = line.substr(fchar, i - fchar);
-
-    if(line[i] == '.'){
-      // Skip the dot
-      ++i;
-
-      int j;
-      for(j = i; j < line.size() && line[j] != ' '; ++j);
-
-      // Copy characters after dot upto whitespace character
-      data_type = line.substr(i, j - i);
-
-      if(!valid_data_type())
-        throw std::domain_error("Invalid data_type " 
-            + data_type + " for label " + symbol);
-
-      // If there is an expression after datatype, copy it
-      if(j < line.size()){
-        // Skip the space
-        ++j;
-
-        if(data_type == "asciiz")
-          // Skip the quotes
-          expr = line.substr(j + 1, line.size() - j - 2);
-        else
-          expr = line.substr(j, line.size() - j);
-      }
-      break;
-    }
-  }
-};
-
-std::ostream& operator<<(std::ostream& os, const Label& label)
-{
-  os << label.symbol << ", " << label.data_type << ", " << label.expr << ", "
-    << label.size();
-  return os;
-}
-
-unsigned int Label::element_size() const
-{
-  if (data_type == "byte" || data_type == "asciiz")
-    return 1;
-  else if (data_type == "half_word")
-    return 2;
-  else if (data_type == "word")
-    return 4;
-
-  return 0;
-}
-
-unsigned int Label::n_elements() const
-{
-  if (data_type == "byte")
-    return 1;
-  else if (data_type == "word")
+  size_t whitespace_idx = dot_idx + 1;
+  for (; whitespace_idx < line.size(); ++whitespace_idx)
   {
-    // Integer arrays are of form:
-    // a, b, c, ... -> Number of elements = Comma Count + 1
-    return std::count(expr.begin(), expr.end(), ',') + 1;
+    if (std::isspace(line[whitespace_idx]))
+        break;
   }
-  else if (data_type == "asciiz")
-    return expr.size() + 1;
+  auto data_type = line.substr(dot_idx + 1, whitespace_idx - 1 - dot_idx);
+  size = data_type_size(data_type);
 
-  return 0;
-}
-
-unsigned int Label::size() const
-{
-  return element_size() * n_elements();
-}
-
-bool Label::valid_data_type() const
-{
-  return data_type == "byte" || data_type == "half_word" || data_type == "word"
-    || data_type == "asciiz";
-}
-
-void Label::fill(char* base_address) const
-{
-  // For empty expressions
-  if (!expr.size())
-  {
-    // Fill the memory with zeroes
-    std::fill(base_address, base_address + size(), '\0');
+  if (whitespace_idx == line.size())
     return ;
+
+  // Initialize values of expression
+
+  // Move to the first character of expression
+  size_t expr_idx = whitespace_idx;
+  for (; expr_idx < line.size(); ++expr_idx)
+  {
+    if (!std::isspace(line[expr_idx]))
+      break;
   }
 
-  if (data_type == "byte" || data_type == "asciiz")
+  if (data_type == "byte")
+    data_segment_base[0] = line[expr_idx];
+  if (data_type == "asciiz")
   {
-    // Copy characters from expression
-    for (int i = 0; i < expr.size(); ++i)
-      base_address[i] = expr[i];
+    // Skip quotes
+    ++expr_idx;
+    auto expr = line.substr(expr_idx, line.size() - expr_idx);
+
+    size *= expr.size();
+
+    for (size_t i = 0; i < expr.size(); ++i)
+      data_segment_base[i] = line[expr_idx + i];
 
     // ASCII strings are null terminated
-    if (data_type == "asciiz")
-      base_address[expr.size()] = '\0';
+    data_segment_base[expr.size()] = '\0';
   }
   else if (data_type == "word")
   {
-    // Typecast as integer for easy conversion
-    int *i_base = (int *) base_address;
+    // Typecast for assigning integer values
+    int* base = (int *) data_segment_base;
+
+    // Add comma at the end of the expression as sentinel
+    auto expr = line.substr(expr_idx) + ",";
+
     bool neg = false;
-    unsigned int offset = 0;
     int sum = 0;
+    size_t element_count = 0;
 
-    // Add a comma at the end as sentinel value
-    auto expression = expr + ",";
-
-    for (int i = 0; i < expression.size(); ++i)
+    for (size_t i = 0; i < expr.size(); ++i)
     {
       // Skip whitespaces
-      if (expression[i] == ' ')
-        continue;
+      if (std::isspace(expr[i]))
+          continue;
 
       sum = 0;
-      neg = false;
-
-      // If first character is a minus sign
-      if (expression[i] == '-')
+      // Is a negative number
+      if (expr[i] == '-')
       {
         neg = true;
         ++i;
       }
 
-      // Building the number
-      while(expression[i] != ' ' && expression[i] != ',')
-        sum = sum * 10 + (expression[i++] - '0');
+      // While reading digits
+      while (!std::isspace(expr[i]) && expr[i] != ',')
+        sum = sum * 10 + (expr[i++] - '0');
 
-      i_base[offset++] = neg ? -1 * sum : sum;
+      base[element_count++] = neg ? -1 * sum : sum;
     }
+
+    size *= element_count;
   }
+}
+
+// Memory occupied by each element of the data type
+size_t data_type_size(const std::string& data_type)
+{
+  if (data_type == "byte" || data_type == "asciiz")
+    return 1;
+  else if (data_type == "word")
+    return 4;
+  else
+    throw "Invalid data type " + data_type;
+
+  return 0;
 }
