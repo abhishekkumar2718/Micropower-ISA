@@ -10,7 +10,7 @@ std::vector<std::string> read_file(const std::string &file_name)
   std::ifstream fs(file_name);
 
   if (!fs)
-    throw "Unable to open source file!";
+    throw std::string("Unable to open source file!");
 
   // TODO: Add more validations for source file
 

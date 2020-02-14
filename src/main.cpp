@@ -5,45 +5,38 @@
 #include "symbol_table.h"
 #include "memory.h"
 #include "register.h"
+#include "options.h"
 
 int main(int argc, char *argv[])
 {
-  bool debug_mode = false, step_run = false;
+  char *text_segment = nullptr;
 
-  if (argc < 2)
+  try 
   {
-    std::cout<<"Invalid number of arguments!"<<std::endl;
-    std::cout<<"usage: u_sim filename [--step-run] [--debug]"<<std::endl;
-    exit(1);
+    // Parse command line arguments
+    auto opts = parse_opts(argc, argv);
+
+    // Read source file
+    auto lines = read_file(opts.source_file);
+
+    auto registers = initialize_registers();
+
+    text_segment = allocate_memory(registers[gp], registers[sp]);
+
+    // Generate symbol table in the first pass.
+    // Static data segments begins at global pointer i.e text_segment + offset
+    auto symbol_table = SymbolTable(lines, text_segment + registers[gp]);
+
+    if (opts.debug)
+      std::cout<<symbol_table<<std::endl;
+  }
+  catch (std::string error_msg) 
+  {
+    std::cout<<"Error: "<<error_msg<<std::endl;
   }
 
-  for(int i = 2; i < argc; ++i)
-  {
-    auto arg = std::string(argv[i]);
-
-    if (arg == "--step-run")
-      step_run = true;
-    else if (arg == "--debug")
-      debug_mode = true;
-    else
-      throw std::invalid_argument(argv[i]);
-  }
-
-  // Read source file
-  auto lines = read_file(argv[1]);
-
-  auto registers = initialize_registers();
-
-  char *text_segment = allocate_memory(registers[gp], registers[sp]);
-
-  // Generate symbol table in the first pass.
-  // Static data segments begins at global pointer i.e text_segment + offset
-  auto symbol_table = SymbolTable(lines, text_segment + registers[gp]);
-
-  if (debug_mode)
-    std::cout<<symbol_table<<std::endl;
-
-  deallocate_memory(text_segment);
+  if (text_segment)
+    deallocate_memory(text_segment);
 
   return 0;
 }

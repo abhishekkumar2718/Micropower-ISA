@@ -98,7 +98,7 @@ size_t data_type_size(const std::string& data_type)
   else if (data_type == "word")
     return 4;
   else
-    throw "Invalid data type " + data_type;
+    throw std::string("Invalid data type " + data_type);
 
   return 0;
 }
