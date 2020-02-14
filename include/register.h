@@ -1,3 +1,7 @@
+/*
+ * Helper module to keep register related information together.
+ */
+
 #ifndef REGISTER_H
 #define REGISTER
 

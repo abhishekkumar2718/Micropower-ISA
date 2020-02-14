@@ -1,5 +1,5 @@
 /*
- * Helper module to store parse command line arguments.
+ * Helper module to parse and store command line arguments.
  */
 
 #ifndef OPTIONS_H

@@ -1,5 +1,5 @@
 /*
- Helper functions for processing source text into useful structures -
+ Helper module for processing source text into useful structures -
  labels, directives and instructions.
  */
 #ifndef PROCESSING_H

@@ -1,4 +1,5 @@
 #include <iostream>
+#include <string>
 
 #include "label.h"
 
@@ -24,6 +25,7 @@ Label::Label(const std::string &line, char* data_segment_base, size_t offset)
   auto data_type = line.substr(dot_idx + 1, whitespace_idx - 1 - dot_idx);
   size = data_type_size(data_type);
 
+  // Return early if there is no initialization expression
   if (whitespace_idx == line.size())
     return ;
 
@@ -43,15 +45,15 @@ Label::Label(const std::string &line, char* data_segment_base, size_t offset)
   {
     // Skip quotes
     ++expr_idx;
-    auto expr = line.substr(expr_idx, line.size() - expr_idx);
 
-    size *= expr.size();
+    // Assume end quote is the last element on line
+    size_t element_count = line.size() - 1 - expr_idx;
 
-    for (size_t i = 0; i < expr.size(); ++i)
-      data_segment_base[i] = line[expr_idx + i];
+    // Copy expression into base of data segment
+    line.copy(data_segment_base, element_count, expr_idx);
 
-    // ASCII strings are null terminated
-    data_segment_base[expr.size()] = '\0';
+    // Add 1 for the null character
+    size *= (element_count + 1);
   }
   else if (data_type == "word")
   {
@@ -67,11 +69,13 @@ Label::Label(const std::string &line, char* data_segment_base, size_t offset)
 
     for (size_t i = 0; i < expr.size(); ++i)
     {
+      sum = 0;
+      neg = false;
+
       // Skip whitespaces
       if (std::isspace(expr[i]))
           continue;
 
-      sum = 0;
       // Is a negative number
       if (expr[i] == '-')
       {

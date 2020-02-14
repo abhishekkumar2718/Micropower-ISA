@@ -36,7 +36,8 @@ std::vector<std::string> read_file(const std::string &file_name)
           line.rbegin(), line.rend(), [](int ch){ return !std::isspace(ch); }
         ).base(), line.end());
 
-    lines.push_back(line);
+    if (line.size())
+      lines.push_back(line);
   }
 
   return lines;

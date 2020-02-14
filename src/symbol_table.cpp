@@ -19,7 +19,7 @@ SymbolTable::SymbolTable(const std::vector<std::string>& lines, char* gp)
       // Format - symbol: .data_type [intialisation_expression]
 
       // Initialize a label
-      Label l(line, gp, offset);
+      Label l(line, gp + offset, offset);
       labels.push_back(l);
 
       offset += l.size;
