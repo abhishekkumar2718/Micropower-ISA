@@ -8,6 +8,8 @@
 #include <string>
 #include <vector>
 
+#include "symbol_table.h"
+
 // Read and preprocess source file
 // Returns a vector containing labels, directives and instructions
 std::vector<std::string> read_file(const std::string&);

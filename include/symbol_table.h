@@ -24,6 +24,10 @@ class SymbolTable
     SymbolTable(const std::vector<std::string>&, char*);
 
     bool empty() const { return labels.empty(); };
+
+    // Return the effective address of label stored
+    int address (const std::string&) const;
+
     friend std::ostream& operator<<(std::ostream&, const SymbolTable&);
 };
 

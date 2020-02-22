@@ -69,3 +69,19 @@ std::ostream& operator<<(std::ostream& os, const SymbolTable& symbol_table)
 
   return os;
 }
+
+int SymbolTable::address(const std::string &label) const
+{
+  for (const auto &l: labels)
+  {
+    if (l.symbol == label)
+    {
+      if (l.section == Section::Data)
+        return 0x10000000 + l.offset;
+      else
+        return 0x00400000 + l.offset * 4;
+    }
+  }
+
+  return 0;
+}
