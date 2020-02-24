@@ -12,47 +12,50 @@ factorial:
 
 recurse:
    # Store current state into stack
-   sub $sp, $sp, 8
-   sw  $ra, 0($sp)
-   sw  $a0, 4($sp)
+   #sub $sp, $sp, 8
+   #sw  $ra, 0($sp)
+   #sw  $a0, 4($sp)
 
    # Call factorial for N - 1
-   addi $a0, $a0, -1
-   jal  factorial
+   addi R4, R4, -1
+
+   bl factorial
 
    # Multiply (N - 1)! with N
-   lw   $a0, 4($sp)
-   mult $a0, $v0
-   mflo $v0
+   #lw   $a0, 4($sp)
+   #mult $a0, $v0
+   #mflo $v0
 
    # Cleanup stack and return
-   lw   $ra, 0($sp)
-   addi $sp, $sp, 8
-   jr   $ra
+   #lw   $ra, 0($sp)
+   #addi $sp, $sp, 8
+   #jr   $ra
 
 # s0 - Number for which factorial is calculated
 # s1 - Factorial by recursion
 # s2 - Factorial by loop
 main:
-  li $s0, 5
+  li 3,5
 
   # Copy value as argument
-  addi $a0, $s0, 0
+  addi R4,R3,0
 
-  jal factorial
-  addi $s1, $v0, 0
+  bl factorial
+
+  addi R5, R6, 0
 
   # Copy values for factorial by loop
-  li   $s2, 1
-  addi $t1, $s0, 0
+  li 7,1
+
+  addi R8,R3,0
 
 loop:
-  mult $s2, $t1
-  mflo $s2
-  addi $t1, $t1  , -1
-  bne  $t1, $zero, loop
+  #mult $s2, $t1
+  #mflo $s2
+  addi R8,R8,1
+  #bne  $t1, $zero, loop
 
-  li $v0, 10
-  syscall
+  li R0,10
+  sc
 
   .end

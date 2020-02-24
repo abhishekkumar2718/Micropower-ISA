@@ -9,30 +9,35 @@ number: .asciiz "24"
 .globl main
 
 non_digit_char:
-  li $v0, -1
+  li 7,-1
 
-  li $a0, 10
-  syscall
+  li R0,10
+  sc
 
 parse:
-  li  $t0, 0
-  li  $v0, 0
+  li 4,0
+
+  li 7,0
 
 loop:
   # Load a character
-  lb $t0, 0($a0)
+   lbz R4, 0(R3)
+
 
   # Done when cursor is at '/0'
-  beq $t0, $zero, done
+  li 8,0
+  bc 4,8,done
   
   # Convert ASCII to equivalent decimal
-  addi $t0, $t0, -48
+  addi R4, R4, -48
 
   # If non digit character
-  bltz $t0, non_digit_char
+  #bltz $t0, non_digit_char
+
 
   # Multiply previous sum by 10
-  li    $t1, 10
+  li 8,10
+
   mult  $v0, $t1
   mflo  $v0
 
@@ -43,41 +48,47 @@ loop:
   addi $a0, $a0, 1
 
   # If non digit character
-  addi $t0, $t0, -9
+  addi R4,R4, -9
+
   bgtz $t0, non_digit_char
+  # 
 
   j loop
+  #
 
 parse_negative:
   # Move a character ahead
-  addi  $a0, 1
+  addi 3,1
 
   # Parse treating as positive
-  jal parse
+  bl parse
 
   # Mutliply by -1
-  li   $t0, -1
-  mult $v0, $t0
-  mflo $v0
+  li 4,-1
 
-  j done
+  #mult $v0, $t0 
+
+  #mflo $v0
+  #
+  #j done
 
 main:
   # Load address at $a0
-  la $a0, number
+  la R3, number
 
   # If first character is '-', parse it as a negative number
-  lb  $t0, 0($a0)
-  beq $t0, 45, parse_negative
+  lbz R4, 0(R3)
+
+  bc 4,5,parse_negative
 
   # Otherwise parse as positive number
-  jal parse
+  bl parse
 
 done:
   # Store integer in $v1 because $v0 is used for syscalls
-  addi $v1, $v0, 0
+  addi R6,R7,0
 
-  li $v0, 10
-  syscall
+  li R0,10
+  sc
 
 .end

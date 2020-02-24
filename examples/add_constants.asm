@@ -5,11 +5,11 @@
 .text
 .globl main
 main:
-  li $t0, 100
-  li $t1, -5
+  li R3, 100 
+  li R4, -5
 
-  add $t2, $t0, $t1
+  add R5,R3,R4
 
-  li $v0, 10
-  syscall
+  li R0,10
+  sc
 .end

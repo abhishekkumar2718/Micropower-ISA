@@ -14,15 +14,20 @@ A: .word 10, 20, 30, 40, 50
 # t0 - A[i]
 # v0 - Sum of array
 sum_list:
-  li $v0, 0
+  li $v0, 0 
+  #li 8,0
 
   loop:
-    beq  $a1, $zero, done
-    addi $a1, $a1, -1
+     li 6,0
+     bc 4,6,done
 
-    lw   $t0, 0($a0)
-    add  $v0, $v0, $t0
-    addi $a0, $a0, 4
+     addi R4,R4,-1
+
+     lwz R7,0(R3)
+
+     add R8, R8, R7
+
+     addi R3, R3, 4
 
     j loop
 
@@ -32,18 +37,20 @@ sum_list:
 # a0 - Base address of array
 # a1 - Number of elements
 main:
-  la $a0, A
-  lw $a1, N
+  la R3, A
+
+  lwz R4, N
 
   # Stores sum in $v0
-  jal sum_list
+  bl sum_list
 
   # Re-load N since it becomes zero at the end of loop
-  lw $a1, N
-  # Calculate average
-  div $v0, $a1
+  lwz R5, N
 
-  li $v0, 10
-  syscall
+  # Calculate average
+  #div $v0, $a1
+
+  li R0,10
+  sc
 
   .end

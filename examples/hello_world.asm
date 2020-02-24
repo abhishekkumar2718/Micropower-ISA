@@ -9,12 +9,12 @@ str: .asciiz "Hello World"
 .globl main
 main:
   # Load string into a0
-  la $a0, str
+  la R3, str
 
-  li $v0, 4
-  syscall
+  li R0,4
+  sc
 
-  li $v0, 10
-  syscall
+  li R0,10
+  sc
 
 .end
