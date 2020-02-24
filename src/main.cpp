@@ -5,7 +5,7 @@
 #include "processing.h"
 #include "symbol_table.h"
 #include "memory.h"
-#include "register.h"
+#include "register_file.h"
 #include "options.h"
 #include "instruction.h"
 
@@ -21,15 +21,14 @@ int main(int argc, char *argv[])
     // Read source file
     auto lines = read_file(opts.source_file);
 
-    auto registers = initialize_registers();
+    RegisterFile register_file;
 
-    text_segment = allocate_memory(registers[gp], registers[sp]);
-
-    int program_counter = 0;
+    // R2 is the global offset pointer
+    text_segment = allocate_memory(register_file.GPR[2]);
 
     // Generate symbol table in the first pass.
     // Static data segments begins at global pointer i.e text_segment + offset
-    auto symbol_table = SymbolTable(lines, text_segment + registers[gp]);
+    auto symbol_table = SymbolTable(lines, text_segment + register_file.GPR[2]);
 
     if (opts.debug)
     {

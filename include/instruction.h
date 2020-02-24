@@ -6,7 +6,6 @@
 #ifndef INSTRUCTION_H
 #define INSTRUCTION_H
 
-#include "register.h"
 #include "symbol_table.h"
 
 class Instruction
@@ -21,8 +20,6 @@ class Instruction
 
     // Return 32-bit representation of the instruction
     int encode() const;
-
-    void execute(RegisterTable&);
 
     char type() const;
 

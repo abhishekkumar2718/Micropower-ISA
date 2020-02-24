@@ -14,7 +14,7 @@ const size_t text_segment_size = (1 << 20);
 // Allocate 2^22 bytes i.e 4 Mb for data segment
 const size_t data_segment_size = (1 << 22);
 
-char* allocate_memory(int&, int&);
+char* allocate_memory(long long&);
 
 void deallocate_memory(char*&);
 #endif

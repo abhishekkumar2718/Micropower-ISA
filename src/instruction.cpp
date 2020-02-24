@@ -193,9 +193,9 @@ void tokenize(std::string line, const SymbolTable &symbol_table,
     // Slice upto the next comma
     auto word = line.substr(i, comma_idx - i);
 
-    if (word.find('$') != std::string::npos)
+    if (word.find('R') != std::string::npos)
       // If it is a register
-      tokens.push_back(register_index(word.substr(1)));
+      tokens.push_back(stoi(word.substr(1)));
     else if (word.find('(') != std::string::npos)
     {
       // If it is an indirect address
