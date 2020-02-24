@@ -28,10 +28,10 @@ sum_list:
 
      addi R3, R3, 4
 
-    j loop
+    b loop
 
   done:
-    jr $ra
+    bclr
 
 # a0 - Base address of array
 # a1 - Number of elements

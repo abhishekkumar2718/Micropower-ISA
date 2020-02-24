@@ -15,7 +15,7 @@ class RegisterFile
     std::vector<long long> GPR;
 
     // 64 bit Link Register
-    long long LR;
+    size_t LR;
 
     // 64 bit Condition Register
     // Treated internally as 32 bit by using upper half

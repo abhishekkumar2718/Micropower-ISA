@@ -7,158 +7,330 @@
 #include "instruction.h"
 #include "processing.h"
 
-// Position of starting bits in 32-bit representation
-const int opcode_position = 32 - 6;
-const int rs_position = opcode_position - 5;
-const int rt_position = rs_position - 5;
-const int rd_position = rt_position - 5;
-const int sh_amt_position = rd_position - 5;
-const int funct_position = sh_amt_position - 5;
-const int imm_position = 0;
-const int address_position = 0;
+// Position of first bit of each field to calculate left shifts needed.
+const int po_position = 32 - 6;
+const int rs_position = po_position - 5;
+const int ra_position = rs_position - 5;
+const int rb_position = ra_position - 5;
+const int rc_position = 0;
 
-// Map mnemonics to their opcodes
-const std::map<std::string, int> OpcodeMapping = {
-  {"addi"   , 0b001000},
-  {"beq"    , 0b000100},
-  {"bne"    , 0b000101},
-  {"bgtz"   , 0b000111},
-  {"bltz"   , 0b000001},
-  {"j"      , 0b000010},
-  {"jal"    , 0b000011},
-  {"lb"     , 0b100000},
-  {"lw"     , 0b100011},
-  {"sb"     , 0b101000},
-  {"sw"     , 0b101011}
+const int rt_position = po_position - 5;
+const int oe_position = rb_position - 1;
+const int xo_position = oe_position - 9;
+
+const int si_position = 0;
+
+const int bo_position = po_position - 5;
+const int bi_position = bo_position - 5;
+const int bd_position = bi_position - 14;
+const int aa_position = bd_position - 1;
+const int lk_position = 0;
+
+const int li_position = po_position - 24;
+
+const int bh_position = 21;
+
+const std::map<std::string, std::string> Formats = {
+  // X Instructions
+  {"and"  , "X"},
+  {"cmp"  , "X"},
+  {"extsw", "X"},
+  {"nand" , "X"},
+  {"or"   , "X"},
+  {"sld"  , "X"},
+  {"srd"  , "X"},
+  {"srad" , "X"},
+  {"xor"  , "X"},
+
+  // XO Instructions
+  {"add" , "XO"},
+  {"subf", "XO"},
+  {"divw", "XO"},
+
+  // D Instructions
+  {"addi", "D"},
+  {"andi", "D"},
+  {"lbz" , "D"},
+  {"lwz" , "D"},
+  {"ori" , "D"},
+  {"stb" , "D"},
+  {"stw" , "D"},
+  {"xori", "D"},
+
+  // B Instructions
+  {"bc" , "B"},
+  {"bca", "B"},
+
+  // I Instructions
+  {"b", "I"},
+  {"ba", "I"},
+  {"bl", "I"},
+
+  // SC Instructions
+  {"sc", "SC"},
+
+  // XL Instructions
+  {"bclr", "XL"}
 };
 
-// Map mnemonics to their funct codes
-const std::map<std::string, int> FunctMapping = {
-  {"add"    , 0b100000},
-  {"div"    , 0b011010},
-  {"jr"     , 0b001000},
-  {"mflo"   , 0b010010},
-  {"mult"   , 0b011000},
-  {"sub"    , 0b100010},
-  {"syscall", 0b001100}
+const std::map<std::string, int> PrimaryOpcodes = {
+  // X Instructions
+  {"and"  , 31},
+  {"cmp"  , 31},
+  {"extsw", 31},
+  {"nand" , 31},
+  {"or"   , 31},
+  {"sld"  , 31},
+  {"srd"  , 31},
+  {"xor"  , 31},
+
+  // XO Instructions
+  {"add" , 31},
+  {"subf", 31},
+  {"divw", 31},
+
+  // D Instructions
+  {"addi", 14},
+  {"andi", 28},
+  {"lbz" , 34},
+  {"lwz" , 32},
+  {"ori" , 24},
+  {"stb" , 38},
+  {"stw" , 36},
+  {"xori", 26},
+
+  // B Instructions
+  {"bc" , 19},
+  {"bca", 19},
+
+  // I Instructions
+  {"b", 18},
+  {"ba", 18},
+  {"bl", 18},
+
+  // SC Instructions
+  {"sc", 17},
+
+  // XL Instructions
+  {"bclr", 19}
+};
+
+const std::map<std::string, int> ExtendedOpcodes = {
+  // X Instructions
+  {"and"  , 28},
+  {"cmp"  , 0},
+  {"extsw", 986},
+  {"nand" , 476},
+  {"or"   , 444},
+  {"sld"  , 27},
+  {"srd"  , 539},
+  {"xor"  , 316},
+
+  // XO Instructions
+  {"add" , 266},
+  {"subf", 40},
+  {"divw", 491}
 };
 
 void tokenize(std::string, const SymbolTable&, std::string&, std::vector<int>&);
 
 Instruction::Instruction(const std::string &line, const SymbolTable &symbol_table)
-  : rs(0), rt(0), rd(0), sh_amt(0), imm(0), address(0)
+  : RA(0), RB(0), RS(0), RT(0), SI(0), BO(0), BI(0), AA(0), LK(1), RC(0), OE(0),
+    BH(0)
 {
   std::vector<int>tokens;
   tokenize(line, symbol_table, mnemonic, tokens);
 
-  if (mnemonic == "syscall")
-    return ;
-
-  if (type() == 'R')
-  {
-    if (mnemonic == "jr" || mnemonic == "mthi" || mnemonic == "mtlo")
-      rs = tokens[0];
-    else if (mnemonic == "mflo" || mnemonic == "mfhi")
-      rd = tokens[0];
-    else if (mnemonic == "mult" || mnemonic == "mutlu" || mnemonic == "div"
-        || mnemonic == "divu")
-    {
-      rs = tokens[0];
-      rd = tokens[1];
-    }
-    else if (mnemonic == "sll" || mnemonic == "srl" || mnemonic == "sra")
-    {
-      rd = tokens[0];
-      rt = tokens[1];
-      sh_amt = tokens[2];
-    }
-    else
-    {
-      rd = tokens[0];
-      rs = tokens[1];
-      rt = tokens[2];
-    }
-  }
-  else if (type() == 'I')
-  {
-    if (mnemonic == "blez" || mnemonic == "bgtz" || mnemonic == "lui")
-    {
-      rs = tokens[0];
-      imm = tokens[1];
-    }
-    else if (mnemonic == "beq" || mnemonic == "bne")
-    {
-      rs = tokens[0];
-      rt = tokens[1];
-      imm = tokens[2];
-    }
-    else
-    {
-      rt = tokens[0];
-      rs = tokens[1];
-      imm = tokens[2];
-    }
-  }
-  else if (type() == 'J')
-    address = tokens[0];
-  // Translate psuedo instructions
-  else if (mnemonic == "li")
+  // Translate pseudo instructions
+  if (mnemonic == "li")
   {
     mnemonic = "addi";
-    rs = 0;
-    rt = tokens[0];
-    imm = tokens[1];
+    RT = tokens[0];
+    // HACK: Use R1 as $zero
+    // Change translation from line by line to whole sections
+    RA = 0x00001;
+    SI = tokens[1];
   }
   else if (mnemonic == "la")
   {
     mnemonic = "addi";
-    rs = 0;
-    rt = tokens[0];
-    imm = 0;
+    RT = tokens[0];
+    // HACK: Same as li
+    RA = 0x00001;
+    SI = tokens[1];
   }
-  else if (mnemonic == "move")
+  else if (type() == "X")
   {
-    mnemonic = "add";
-    rd = tokens[0];
-    rs = tokens[1];
-    rt = 0;
+    if (mnemonic == "cmp")
+    {
+      RA = tokens[0];
+      RB = tokens[1];
+    }
+    else if (mnemonic == "extsw")
+    {
+      RA = tokens[0];
+      RS = tokens[1];
+    }
+    else
+    {
+      RA = tokens[0];
+      RS = tokens[1];
+      RB = tokens[2];
+    }
   }
-}
+  else if (type() == "XO")
+  {
+    RT = tokens[0];
+    RA = tokens[1];
+    RB = tokens[2];
+  }
+  else if (type() == "D")
+  {
+    if (mnemonic == "stw" || mnemonic == "stb")
+    {
+      RS = tokens[0];
+      RT = tokens[1];
+    }
+    else
+    {
+      RT = tokens[0];
+      RA = tokens[1];
+    }
 
-char Instruction::type() const
-{
-  if (mnemonic == "j" || mnemonic == "jal")
-    return 'J';
-  else if (OpcodeMapping.count(mnemonic))
-    return 'I';
-  else if (FunctMapping.count(mnemonic))
-    return 'R';
-
-  return '\0';
+    SI = tokens[2];
+  }
+  else if (type() == "B")
+  {
+    BO = tokens[0];
+    BI = tokens[1];
+    BD = tokens[2];
+    AA = (mnemonic == "bca");
+  }
+  else if (type() == "I")
+  {
+    LI = tokens[0];
+    AA = (mnemonic == "ba");
+    LK = (mnemonic == "bl");
+  }
+  else if (type() == "XL")
+    LK = tokens.size() != 0;
 }
 
 int Instruction::encode() const
 {
   int result = 0;
 
-  // R format instructions have opcode 0
-  if (type() != 'R')
-    result = OpcodeMapping.at(mnemonic) << opcode_position;
-
-  if (type() == 'J')
-    result = result | address << address_position;
-  else if (type() == 'I')
+  if (type() == "X")
   {
-    result = result | rs << rs_position | rt << rt_position |
-      (imm & (1 << 17) - 1);
+    // Record bit is zero
+    result = PrimaryOpcodes.at(mnemonic) << po_position
+      | RS << rs_position
+      | RA << ra_position
+      | RB << rb_position
+      | ExtendedOpcodes.at(mnemonic) << xo_position
+      | RC << rc_position;
   }
-  else if (type() == 'R')
+  else if (type() == "XO")
   {
-    result = result | rs << rs_position | rt << rt_position | 
-      sh_amt << sh_amt_position | FunctMapping.at(mnemonic) << funct_position;
+    // Overflow exception and record bits are zero
+    result = PrimaryOpcodes.at(mnemonic) << po_position
+      | RT << rt_position
+      | RA << ra_position
+      | RB << rb_position
+      | OE << oe_position
+      | ExtendedOpcodes.at(mnemonic) << xo_position
+      | RC << rc_position;
+  }
+  else if (type() == "D")
+  {
+    result = PrimaryOpcodes.at(mnemonic) << po_position
+      | RT << rt_position
+      | RA << ra_position
+      | SI << si_position;
+  }
+  else if (type() == "B")
+  {
+    result = PrimaryOpcodes.at(mnemonic) << po_position
+      | BO << bo_position
+      | BI << bi_position
+      | BD << bd_position
+      | AA << aa_position
+      | LK << lk_position;
+  }
+  else if (type() == "I")
+  {
+    result = PrimaryOpcodes.at(mnemonic) << po_position
+      | LI << li_position
+      | AA << aa_position
+      | LK << lk_position;
+  }
+  else if (type() == "SC")
+  {
+    // TODO: Add LEV code for system calls
+    result = PrimaryOpcodes.at(mnemonic) << po_position;
+  }
+  else if (type() == "XL")
+  {
+    result = PrimaryOpcodes.at(mnemonic) << po_position
+      | BO << bo_position
+      | BI << bi_position
+      | BH << bh_position
+      | LK << lk_position;
   }
 
   return result;
+}
+
+void Instruction::execute(RegisterFile &register_file)
+{
+  // TODO: Implement X, D, B, L, I Instructions
+
+  // XO Instructions
+  if (mnemonic == "add")
+    register_file.GPR[RT] = register_file.GPR[RA] + register_file.GPR[RB];
+  else if (mnemonic == "subf")
+    register_file.GPR[RT] = register_file.GPR[RB] - register_file.GPR[RA];
+}
+
+std::vector<Instruction> translate_instructions(
+    const std::vector<std::string> &lines,
+    const SymbolTable &symbol_table)
+{
+  std::vector<Instruction> instructions;
+
+  for (const auto &l: lines)
+  {
+    if (is_data_label(l) || is_text_label(l) || is_assembly_directive(l))
+      continue;
+
+    instructions.push_back(Instruction(l, symbol_table));
+  }
+
+  return instructions;
+}
+
+std::ostream& operator<<(std::ostream &os, const Instruction &i)
+{
+  os << i.mnemonic << " ";
+
+  if (i.type() == "X")
+  {
+    os << i.RS <<", "<< i.RA << ", " << i.RB << ", "
+      << ExtendedOpcodes.at(i.mnemonic) << ", " << i.RC;
+  }
+  else if (i.type() == "XO")
+  {
+    os << i.RT <<", "<< i.RA << ", " << i.RB << ", " << i.OE << ", "
+      << ExtendedOpcodes.at(i.mnemonic) << ", " << i.RC;
+  }
+  else if (i.type() == "D")
+    os << i.RT << ", " << i.RA << ", " << i.SI;
+  else if (i.type() == "B")
+    os << i.BO << ", " << i.BI << ", " << i.BD << ", " << i.AA << ", " << i.LK;
+  else if (i.type() == "I")
+    os << i.LI << ", " <<i.AA << ", " << i.LK;
+
+  return os;
 }
 
 // Break down an instruction line into mnemonic, and integer tokens like rs, rt
@@ -193,7 +365,7 @@ void tokenize(std::string line, const SymbolTable &symbol_table,
     // Slice upto the next comma
     auto word = line.substr(i, comma_idx - i);
 
-    if (word.find('R') != std::string::npos)
+    if (word[0] == 'R')
       // If it is a register
       tokens.push_back(stoi(word.substr(1)));
     else if (word.find('(') != std::string::npos)
@@ -205,10 +377,7 @@ void tokenize(std::string line, const SymbolTable &symbol_table,
       auto base = word.substr(left_idx + 1, right_idx - left_idx - 1);
       auto imm = word.substr(0, left_idx);
 
-      std::cout<<"Base: "<<base<<" Imm: "<<imm<<std::endl;
-
-      tokens.push_back(stoi(base));
-
+      tokens.push_back(stoi(base.substr(1)));
       tokens.push_back(stoi(imm));
     }
     else if (isalpha(word[0]))
@@ -223,37 +392,6 @@ void tokenize(std::string line, const SymbolTable &symbol_table,
   }
 }
 
-std::vector<Instruction> translate_instructions(
-    const std::vector<std::string> &lines,
-    const SymbolTable &symbol_table)
-{
-  std::vector<Instruction> instructions;
-
-  for (const auto &l: lines)
-  {
-    if (is_data_label(l) || is_text_label(l) || is_assembly_directive(l))
-      continue;
-
-    instructions.push_back(Instruction(l, symbol_table));
-  }
-
-  return instructions;
-}
-
-std::ostream& operator<<(std::ostream &os, const Instruction &i)
-{
-  os << i.mnemonic << " ";
-
-  if (i.type() == 'J')
-    os << "Address: 0x" << std::hex << i.address << std::dec;
-  else if (i.type() == 'I')
-    os << "RS: " << i.rs << " " << "RT: " << i.rt << " "<< "Immediate: " << i.imm;
-  else
-  {
-    os << "RS: " << i.rs << " " << "RT: " << i.rt << " " << "RD: "<< i.rd
-      << " " << "Shift Amount: " << i.sh_amt << " " << "Funct: " << std::hex
-      << FunctMapping.at(i.mnemonic) << std::dec;
-  }
-
-  return os;
-}
+std::string Instruction::type() const {
+  return Formats.at(mnemonic);
+};

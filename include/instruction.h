@@ -7,6 +7,7 @@
 #define INSTRUCTION_H
 
 #include "symbol_table.h"
+#include "register_file.h"
 
 class Instruction
 {
@@ -14,14 +15,16 @@ class Instruction
     std::string mnemonic;
 
     // TODO: Look into bit packing and optimize memory use
-    int rs, rt, rd, sh_amt, imm, address;
+    int RA, RB, RS, RT, SI, BO, BI, BD, AA, LK, RC, OE, LI, BH;
   public:
     Instruction(const std::string&, const SymbolTable&);
 
     // Return 32-bit representation of the instruction
     int encode() const;
 
-    char type() const;
+    std::string type() const;
+
+    void execute(RegisterFile&);
 
     friend std::ostream& operator<<(std::ostream&, const Instruction&);
 };
