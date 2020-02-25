@@ -17,7 +17,7 @@ class SymbolTable
     // TODO: Use map<Symbol, ...> instead of vector for faster search
     std::vector<Label> labels;
 
-    char *data_segment_base;
+    char *base;
   public:
     // Generate symbol table - Create label-offset pairs and
     // initialize variables (if given)

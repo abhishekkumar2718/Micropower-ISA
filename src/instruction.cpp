@@ -281,15 +281,18 @@ int Instruction::encode() const
   return result;
 }
 
-void Instruction::execute(RegisterFile &register_file)
+void Instruction::execute(RegisterFile &rf)
 {
+  rf.NIA = rf.CIA + 4;
   // TODO: Implement X, D, B, L, I Instructions
 
   // XO Instructions
   if (mnemonic == "add")
-    register_file.GPR[RT] = register_file.GPR[RA] + register_file.GPR[RB];
+    rf.GPR[RT] = rf.GPR[RA] + rf.GPR[RB];
   else if (mnemonic == "subf")
-    register_file.GPR[RT] = register_file.GPR[RB] - register_file.GPR[RA];
+    rf.GPR[RT] = rf.GPR[RB] - rf.GPR[RA];
+  else if (mnemonic == "sc")
+      rf.NIA = 0;
 }
 
 std::vector<Instruction> translate_instructions(

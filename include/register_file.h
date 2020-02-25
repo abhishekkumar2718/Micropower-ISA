@@ -8,6 +8,8 @@
 #include <vector>
 #include <string>
 
+#include "memory.h"
+
 class RegisterFile
 {
   public:
@@ -32,7 +34,7 @@ class RegisterFile
 
     RegisterFile() :
       GPR(std::vector<long long> (32, 0)),
-      CIA(0x00400000), NIA(0x00400000 + 4) {};
+      CIA(text_segment_base), NIA(text_segment_base + 4) {};
 };
 
 #endif

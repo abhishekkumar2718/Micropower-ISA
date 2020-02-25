@@ -3,11 +3,12 @@
 #include <algorithm>
 
 #include "symbol_table.h"
+#include "memory.h"
 #include "processing.h"
 
 // Generate the symbol table - Initializing values if given expressions
 SymbolTable::SymbolTable(const std::vector<std::string>& lines, char* gp)
-  : data_segment_base(gp)
+  : base(gp)
 {
   size_t offset = 0;
   unsigned int instruction_count = 0;
@@ -55,7 +56,7 @@ std::ostream& operator<<(std::ostream& os, const SymbolTable& symbol_table)
 
     if (label.section == Section::Data)
     {
-      base = symbol_table.data_segment_base + label.offset;
+      base = symbol_table.base + label.offset;
 
       os << "Data" << " " << label.size << std::endl;
       for (int i = 0; i < label.size; ++i)
@@ -77,9 +78,9 @@ int SymbolTable::address(const std::string &label) const
     if (l.symbol == label)
     {
       if (l.section == Section::Data)
-        return 0x10000000 + l.offset;
+        return data_segment_base + l.offset;
       else
-        return 0x00400000 + l.offset * 4;
+        return text_segment_base + l.offset * 4;
     }
   }
 
