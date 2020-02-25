@@ -14,12 +14,11 @@ A: .word 10, 20, 30, 40, 50
 # t0 - A[i]
 # v0 - Sum of array
 sum_list:
-  li $v0, 0 
-  #li 8,0
+  li R8,0
 
   loop:
-     li 6,0
-     bc 4,6,done
+     li R6,0
+     bc R4,R6,done
 
      addi R4,R4,-1
 
@@ -45,10 +44,12 @@ main:
   bl sum_list
 
   # Re-load N since it becomes zero at the end of loop
-  lwz R5, N
+  lwz R4, N
 
   # Calculate average
-  #div $v0, $a1
+  divw R9, R8, R4
+
+
 
   li R0,10
   sc
