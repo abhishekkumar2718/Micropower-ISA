@@ -2,6 +2,7 @@ CC := g++
 SRCDIR := src
 BUILDDIR := build
 TARGET := bin/u_sim
+TARGET_DIR := bin
 
 SRCEXT := cpp
 SOURCES := $(shell find $(SRCDIR) -type f -name *.$(SRCEXT))
@@ -11,6 +12,7 @@ INC := -I include
 
 $(TARGET): $(OBJECTS)
 	@echo " Linking..."
+	@mkdir -p $(TARGET_DIR)
 	@echo " $(CC) $^ -o $(TARGET) $(LIB)"; $(CC) $^ -o $(TARGET) $(LIB)
 
 $(BUILDDIR)/%.o: $(SRCDIR)/%.$(SRCEXT)
