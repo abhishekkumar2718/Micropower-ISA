@@ -15,7 +15,7 @@ class Instruction
     std::string mnemonic;
 
     // TODO: Look into bit packing and optimize memory use
-    int RA, RB, RS, RT, SI, BO, BI, BD, AA, LK, RC, OE, LI, BH;
+    long long int RA, RB, RS, RT, SI, BO, BI, BD, AA, LK, RC, OE, LI, BH;
   public:
     Instruction(const std::string&, const SymbolTable&);
 

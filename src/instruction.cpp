@@ -286,13 +286,100 @@ void Instruction::execute(RegisterFile &rf)
   rf.NIA = rf.CIA + 4;
   // TODO: Implement X, D, B, L, I Instructions
 
+  // X Instructions
+  if (mnemonic == "and")
+    rf.GPR[RA] = rf.GPR[RS] + rf.GPR[RB];
+  else if (mnemonic == "cmp") {
+    long long shift_no = 1;
+    if (rf.GPR[RA] < rf.GPR[RB])
+       rf.CR = (shift_no << 63);
+    else if (rf.GPR[RA] > rf.GPR[RB])
+        rf.CR = (shift_no << 62);
+    else 
+        rf.CR = (shift_no << 61);
+  }
+  else if (mnemonic == "extsw") {
+    long long upper32 = (rf.GPR[RS] >> 32);
+    long long RS32 = (upper32 % 2) ? 1: 0;
+    rf.GPR[RA] = (upper32 << 32);
+    if(RS32 == 1)
+        for(long long i=0; i<32; ++i)
+            rf.GPR[RA] |= (RS32<<i);
+  }
+  else if (mnemonic == "nand")
+    rf.GPR[RA] = ~(rf.GPR[RS] & rf.GPR[RB]);
+  else if (mnemonic == "or")
+    rf.GPR[RA] = rf.GPR[RS] | rf.GPR[RB];
+  else if (mnemonic == "sld") { 
+    // Yet to be figured out.
+  }
+  else if (mnemonic == "srd") {
+    // Yet to be figured out. 
+  }
+  else if (mnemonic == "xor") {
+      rf.GPR[RA] = rf.GPR[RS] ^ rf.GPR[RB];
+  }
   // XO Instructions
-  if (mnemonic == "add")
+  else if (mnemonic == "add")
     rf.GPR[RT] = rf.GPR[RA] + rf.GPR[RB];
   else if (mnemonic == "subf")
     rf.GPR[RT] = rf.GPR[RB] - rf.GPR[RA];
+  else if (mnemonic == "divw"){
+    rf.GPR[RT] = rf.GPR[RB] / rf.GPR[RA];
+  }
+  // D Instructions
+  else if (mnemonic == "addi")
+    rf.GPR[RT] = rf.GPR[RA] + rf.GPR[SI];
+  else if (mnemonic == "andi")
+    rf.GPR[RT] = rf.GPR[RA] & rf.GPR[SI];
+  else if (mnemonic == "lbz") {
+
+  }
+  else if (mnemonic == "lwz") {
+
+  }
+  else if (mnemonic == "ori")
+    rf.GPR[RT] = rf.GPR[RA] | rf.GPR[SI];
+  else if (mnemonic == "stb") {
+
+  }
+  else if (mnemonic == "stw") {
+
+  } 
+  else if (mnemonic == "xori")
+    rf.GPR[RT] = rf.GPR[RA] ^ rf.GPR[SI];
+  // B Instructions
+  else if (mnemonic == "bc")
+    rf.NIA = rf.CIA + (BD << 2);
+  else if (mnemonic == "bca")
+    rf.NIA = BD << 2;
+  // I Instructions
+  else if (mnemonic == "b") {
+    rf.GPR[AA] = 0;
+    rf.NIA = (rf.GPR[LI] << 2) +rf.CIA;
+    if (rf.GPR[LK]) 
+      rf.LR = rf.CIA + 4;
+  }
+  else if (mnemonic == "ba") {
+    rf.GPR[AA] = 1;
+    rf.NIA = (rf.GPR[LI] << 2);
+    if (rf.GPR[LK])
+      rf.LR = rf.CIA + 4;
+  }
+  else if (mnemonic == "bl") {
+      rf.GPR[AA] = 0;
+      rf.GPR[LK] = 1;
+      rf.NIA = rf.CIA + (rf.GPR[LI]<<2);
+  }
+  // SC Instructions
   else if (mnemonic == "sc")
-      rf.NIA = 0;
+    rf.NIA = 0;
+  // XL Instructions
+  else if (mnemonic == "bclr"){
+    rf.GPR[BH] = 0;
+    BO = 0x10100;
+    rf.NIA = rf.LR<<2;
+  }
 }
 
 std::vector<Instruction> translate_instructions(
