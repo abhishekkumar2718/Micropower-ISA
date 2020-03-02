@@ -281,6 +281,21 @@ int Instruction::encode() const
   return result;
 }
 
+std::ostream& operator<<(std::ostream &os, const RegisterFile &rf)
+{
+    os << "GPR:" << std::endl;
+    for(int i = 0; i < 32; i++){
+        os << "GPR[" << i+1 <<"] = "<<rf.GPR[i]<<std::endl;
+    }
+    os << "LR = " << rf.LR << std::endl;
+    os << "CR = " << rf.CR << std::endl;    
+    os << "SRR0 = " << rf.SRR0 << std::endl;    
+    os << "CIA = " << rf.CIA << std::endl;
+    os << "NIA = " << rf.NIA << std::endl;
+
+    return os;
+}
+
 void Instruction::execute(RegisterFile &rf)
 {
   rf.NIA = rf.CIA + 4;
@@ -288,23 +303,21 @@ void Instruction::execute(RegisterFile &rf)
 
   // X Instructions
   if (mnemonic == "and")
-    rf.GPR[RA] = rf.GPR[RS] + rf.GPR[RB];
+    rf.GPR[RA] = rf.GPR[RS] & rf.GPR[RB];
   else if (mnemonic == "cmp") {
-    long long shift_no = 1;
     if (rf.GPR[RA] < rf.GPR[RB])
-       rf.CR = (shift_no << 63);
+       rf.CR = (1LL << 63);
     else if (rf.GPR[RA] > rf.GPR[RB])
-        rf.CR = (shift_no << 62);
+        rf.CR = (1LL << 62);
     else 
-        rf.CR = (shift_no << 61);
+        rf.CR = (1LL << 61);
   }
   else if (mnemonic == "extsw") {
     long long upper32 = (rf.GPR[RS] >> 32);
-    long long RS32 = (upper32 % 2) ? 1: 0;
+    long long RS32 = (upper32 % 2);
     rf.GPR[RA] = (upper32 << 32);
-    if(RS32 == 1)
-        for(long long i=0; i<32; ++i)
-            rf.GPR[RA] |= (RS32<<i);
+    if(RS32)
+        rf.GPR[RA] |= -1;
   }
   else if (mnemonic == "nand")
     rf.GPR[RA] = ~(rf.GPR[RS] & rf.GPR[RB]);
@@ -372,14 +385,29 @@ void Instruction::execute(RegisterFile &rf)
       rf.NIA = rf.CIA + (rf.GPR[LI]<<2);
   }
   // SC Instructions
-  else if (mnemonic == "sc")
+  else if (mnemonic == "sc"){
+    rf.SRR0 = rf.CIA + 4;
     rf.NIA = 0;
+    switch(rf.GPR[0]){
+        case 1: std::cout << rf.GPR[3] << std::endl;
+        break;
+        case 4: // Memory access required for printing the string
+        break;
+        case 5: std::cin >>  rf.GPR[3];
+        break;
+        case 8: // Memory access required for reading the string
+        break;
+        default:
+        break;
+    }
+  }
   // XL Instructions
   else if (mnemonic == "bclr"){
     rf.GPR[BH] = 0;
     BO = 0x10100;
     rf.NIA = rf.LR<<2;
   }
+  /* std::cout<<rf; */
 }
 
 std::vector<Instruction> translate_instructions(
