@@ -60,6 +60,7 @@ int main(int argc, char *argv[])
 
       rf.CIA = rf.NIA;
     }
+    std::cout<<rf;
   }
   catch (std::string error_msg) 
   {

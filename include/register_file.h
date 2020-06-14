@@ -35,6 +35,8 @@ class RegisterFile
     RegisterFile() :
       GPR(std::vector<long long> (32, 0)),
       CIA(text_segment_base), NIA(text_segment_base + 4) {};
+
+    friend std::ostream& operator<<(std::ostream&, const RegisterFile&);
 };
 
 #endif

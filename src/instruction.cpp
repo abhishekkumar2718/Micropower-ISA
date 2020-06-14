@@ -281,18 +281,133 @@ int Instruction::encode() const
   return result;
 }
 
+std::ostream& operator<<(std::ostream &os, const RegisterFile &rf)
+{
+    os << "GPR:" << std::endl;
+    for(int i = 0; i < 32; i++){
+        os << "GPR[" << i+1 <<"] = "<<rf.GPR[i]<<std::endl;
+    }
+    os << "LR = " << rf.LR << std::endl;
+    os << "CR = " << rf.CR << std::endl;    
+    os << "SRR0 = " << rf.SRR0 << std::endl;    
+    os << "CIA = " << rf.CIA << std::endl;
+    os << "NIA = " << rf.NIA << std::endl;
+
+    return os;
+}
+
 void Instruction::execute(RegisterFile &rf)
 {
   rf.NIA = rf.CIA + 4;
   // TODO: Implement X, D, B, L, I Instructions
 
+  // X Instructions
+  if (mnemonic == "and")
+    rf.GPR[RA] = rf.GPR[RS] & rf.GPR[RB];
+  else if (mnemonic == "cmp") {
+    if (rf.GPR[RA] < rf.GPR[RB])
+       rf.CR = (1LL << 63);
+    else if (rf.GPR[RA] > rf.GPR[RB])
+        rf.CR = (1LL << 62);
+    else 
+        rf.CR = (1LL << 61);
+  }
+  else if (mnemonic == "extsw") {
+    long long upper32 = (rf.GPR[RS] >> 32);
+    long long RS32 = (upper32 % 2);
+    rf.GPR[RA] = (upper32 << 32);
+    if(RS32)
+        rf.GPR[RA] |= -1;
+  }
+  else if (mnemonic == "nand")
+    rf.GPR[RA] = ~(rf.GPR[RS] & rf.GPR[RB]);
+  else if (mnemonic == "or")
+    rf.GPR[RA] = rf.GPR[RS] | rf.GPR[RB];
+  else if (mnemonic == "sld") { 
+    // Yet to be figured out.
+  }
+  else if (mnemonic == "srd") {
+    // Yet to be figured out. 
+  }
+  else if (mnemonic == "xor") {
+      rf.GPR[RA] = rf.GPR[RS] ^ rf.GPR[RB];
+  }
   // XO Instructions
-  if (mnemonic == "add")
+  else if (mnemonic == "add")
     rf.GPR[RT] = rf.GPR[RA] + rf.GPR[RB];
   else if (mnemonic == "subf")
     rf.GPR[RT] = rf.GPR[RB] - rf.GPR[RA];
-  else if (mnemonic == "sc")
-      rf.NIA = 0;
+  else if (mnemonic == "divw"){
+    rf.GPR[RT] = rf.GPR[RB] / rf.GPR[RA];
+  }
+  // D Instructions
+  else if (mnemonic == "addi")
+    rf.GPR[RT] = rf.GPR[RA] + rf.GPR[SI];
+  else if (mnemonic == "andi")
+    rf.GPR[RT] = rf.GPR[RA] & rf.GPR[SI];
+  else if (mnemonic == "lbz") {
+
+  }
+  else if (mnemonic == "lwz") {
+
+  }
+  else if (mnemonic == "ori")
+    rf.GPR[RT] = rf.GPR[RA] | rf.GPR[SI];
+  else if (mnemonic == "stb") {
+
+  }
+  else if (mnemonic == "stw") {
+
+  } 
+  else if (mnemonic == "xori")
+    rf.GPR[RT] = rf.GPR[RA] ^ rf.GPR[SI];
+  // B Instructions
+  else if (mnemonic == "bc")
+    rf.NIA = rf.CIA + (BD << 2);
+  else if (mnemonic == "bca")
+    rf.NIA = BD << 2;
+  // I Instructions
+  else if (mnemonic == "b") {
+    rf.GPR[AA] = 0;
+    rf.NIA = (rf.GPR[LI] << 2) +rf.CIA;
+    if (rf.GPR[LK]) 
+      rf.LR = rf.CIA + 4;
+  }
+  else if (mnemonic == "ba") {
+    rf.GPR[AA] = 1;
+    rf.NIA = (rf.GPR[LI] << 2);
+    if (rf.GPR[LK])
+      rf.LR = rf.CIA + 4;
+  }
+  else if (mnemonic == "bl") {
+      rf.GPR[AA] = 0;
+      rf.GPR[LK] = 1;
+      rf.NIA = rf.CIA + (rf.GPR[LI]<<2);
+  }
+  // SC Instructions
+  else if (mnemonic == "sc"){
+    rf.SRR0 = rf.CIA + 4;
+    rf.NIA = 0;
+    switch(rf.GPR[0]){
+        case 1: std::cout << rf.GPR[3] << std::endl;
+        break;
+        case 4: // Memory access required for printing the string
+        break;
+        case 5: std::cin >>  rf.GPR[3];
+        break;
+        case 8: // Memory access required for reading the string
+        break;
+        default:
+        break;
+    }
+  }
+  // XL Instructions
+  else if (mnemonic == "bclr"){
+    rf.GPR[BH] = 0;
+    BO = 0x10100;
+    rf.NIA = rf.LR<<2;
+  }
+  /* std::cout<<rf; */
 }
 
 std::vector<Instruction> translate_instructions(
