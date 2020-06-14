@@ -24,7 +24,7 @@ class Instruction
 
     std::string type() const;
 
-    void execute(RegisterFile&);
+    void execute(RegisterFile&, const SymbolTable&);
 
     friend std::ostream& operator<<(std::ostream&, const Instruction&);
 };

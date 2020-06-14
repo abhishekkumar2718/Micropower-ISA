@@ -16,11 +16,11 @@ class SymbolTable
   private:
     // TODO: Use map<Symbol, ...> instead of vector for faster search
     std::vector<Label> labels;
-
-    char *base;
   public:
     // Generate symbol table - Create label-offset pairs and
     // initialize variables (if given)
+    char *base;
+
     SymbolTable(const std::vector<std::string>&, char*);
 
     bool empty() const { return labels.empty(); };

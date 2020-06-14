@@ -148,7 +148,7 @@ Instruction::Instruction(const std::string &line, const SymbolTable &symbol_tabl
     RT = tokens[0];
     // HACK: Use R1 as $zero
     // Change translation from line by line to whole sections
-    RA = 0x00001;
+    RA = 1;
     SI = tokens[1];
   }
   else if (mnemonic == "la")
@@ -156,7 +156,7 @@ Instruction::Instruction(const std::string &line, const SymbolTable &symbol_tabl
     mnemonic = "addi";
     RT = tokens[0];
     // HACK: Same as li
-    RA = 0x00001;
+    RA = 1;
     SI = tokens[1];
   }
   else if (type() == "X")
@@ -284,9 +284,9 @@ int Instruction::encode() const
 std::ostream& operator<<(std::ostream &os, const RegisterFile &rf)
 {
     os << "GPR:" << std::endl;
-    for(int i = 0; i < 32; i++){
-        os << "GPR[" << i+1 <<"] = "<<rf.GPR[i]<<std::endl;
-    }
+    for(int i = 0; i < 32; i++)
+        os << "GPR[" << i <<"] = "<<rf.GPR[i]<<std::endl;
+
     os << "LR = " << rf.LR << std::endl;
     os << "CR = " << rf.CR << std::endl;    
     os << "SRR0 = " << rf.SRR0 << std::endl;    
@@ -296,10 +296,9 @@ std::ostream& operator<<(std::ostream &os, const RegisterFile &rf)
     return os;
 }
 
-void Instruction::execute(RegisterFile &rf)
+void Instruction::execute(RegisterFile &rf, const SymbolTable &symbol_table)
 {
   rf.NIA = rf.CIA + 4;
-  // TODO: Implement X, D, B, L, I Instructions
 
   // X Instructions
   if (mnemonic == "and")
@@ -342,9 +341,9 @@ void Instruction::execute(RegisterFile &rf)
   }
   // D Instructions
   else if (mnemonic == "addi")
-    rf.GPR[RT] = rf.GPR[RA] + rf.GPR[SI];
+    rf.GPR[RT] = rf.GPR[RA] + SI;
   else if (mnemonic == "andi")
-    rf.GPR[RT] = rf.GPR[RA] & rf.GPR[SI];
+    rf.GPR[RT] = rf.GPR[RA] & SI;
   else if (mnemonic == "lbz") {
 
   }
@@ -352,7 +351,7 @@ void Instruction::execute(RegisterFile &rf)
 
   }
   else if (mnemonic == "ori")
-    rf.GPR[RT] = rf.GPR[RA] | rf.GPR[SI];
+    rf.GPR[RT] = rf.GPR[RA] | SI;
   else if (mnemonic == "stb") {
 
   }
@@ -360,7 +359,7 @@ void Instruction::execute(RegisterFile &rf)
 
   } 
   else if (mnemonic == "xori")
-    rf.GPR[RT] = rf.GPR[RA] ^ rf.GPR[SI];
+    rf.GPR[RT] = rf.GPR[RA] ^ SI;
   // B Instructions
   else if (mnemonic == "bc")
     rf.NIA = rf.CIA + (BD << 2);
@@ -386,19 +385,25 @@ void Instruction::execute(RegisterFile &rf)
   }
   // SC Instructions
   else if (mnemonic == "sc"){
+    // std::cout<<"Executing SC instrution"<<std::endl;
+
     rf.SRR0 = rf.CIA + 4;
-    rf.NIA = 0;
-    switch(rf.GPR[0]){
+
+    switch(rf.GPR[0])
+    {
         case 1: std::cout << rf.GPR[3] << std::endl;
-        break;
-        case 4: // Memory access required for printing the string
-        break;
+                break;
+        case 4: 
+                std::cout<<std::endl;
+                for (int offset = rf.GPR[3] - data_segment_base; symbol_table.base[offset]; offset++)
+                  std::cout<<symbol_table.base[offset];
+                break;
         case 5: std::cin >>  rf.GPR[3];
-        break;
+                break;
         case 8: // Memory access required for reading the string
-        break;
-        default:
-        break;
+                break;
+        case 10: rf.NIA = 0;
+                 break;
     }
   }
   // XL Instructions
@@ -429,7 +434,12 @@ std::vector<Instruction> translate_instructions(
 
 std::ostream& operator<<(std::ostream &os, const Instruction &i)
 {
-  os << i.mnemonic << " ";
+  os << i.mnemonic;
+
+  if (i.type() == "SC")
+    return os;
+
+  os << " ";
 
   if (i.type() == "X")
   {
@@ -500,7 +510,9 @@ void tokenize(std::string line, const SymbolTable &symbol_table,
     }
     else if (isalpha(word[0]))
       // If word is a label
+    {
       tokens.push_back(symbol_table.address(word));
+    }
     else if (word[0] == '-')
       tokens.push_back(-1 * stoi(word.substr(1)));
     else

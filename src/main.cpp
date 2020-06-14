@@ -53,13 +53,14 @@ int main(int argc, char *argv[])
 
       if (opts.step_run)
       {
-        std::cout<<std::hex<<rf.CIA<<": "<<i<<std::endl;
-        i.execute(rf);
+        std::cout<<std::hex<<rf.CIA<<": "<<std::dec<<i;
+        i.execute(rf, symbol_table);
         std::getchar();
       }
 
       rf.CIA = rf.NIA;
     }
+
     std::cout<<rf;
   }
   catch (std::string error_msg) 

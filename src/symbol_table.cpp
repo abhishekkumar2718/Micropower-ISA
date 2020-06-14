@@ -42,6 +42,8 @@ SymbolTable::SymbolTable(const std::vector<std::string>& lines, char* gp)
 
 std::ostream& operator<<(std::ostream& os, const SymbolTable& symbol_table)
 {
+  os << "Data segment base: " << std::hex << data_segment_base << std::dec << std::endl;
+
   if (symbol_table.empty())
     return os;
 
