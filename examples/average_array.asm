@@ -37,7 +37,6 @@ sum_list:
 # a1 - Number of elements
 main:
   la R3, A
-
   lwz R4, N
 
   # Stores sum in $v0
@@ -48,8 +47,6 @@ main:
 
   # Calculate average
   divw R9, R8, R4
-
-
 
   li R0,10
   sc

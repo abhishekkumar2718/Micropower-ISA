@@ -190,14 +190,26 @@ Instruction::Instruction(const std::string &line, const SymbolTable &symbol_tabl
     {
       RS = tokens[0];
       RT = tokens[1];
+      SI = tokens[2];
     }
-    else
+    else if (mnemonic == "lwz")
+    {
+      RT = tokens[0];
+      if (tokens.size() == 2)
+        SI = tokens[1];
+      else
+      {
+        RA = tokens[1];
+        SI = tokens[2];
+      }
+    }
+    else 
     {
       RT = tokens[0];
       RA = tokens[1];
+      SI = tokens[2];
     }
 
-    SI = tokens[2];
   }
   else if (type() == "B")
   {
@@ -337,7 +349,7 @@ void Instruction::execute(RegisterFile &rf, const SymbolTable &symbol_table)
   else if (mnemonic == "subf")
     rf.GPR[RT] = rf.GPR[RB] - rf.GPR[RA];
   else if (mnemonic == "divw"){
-    rf.GPR[RT] = rf.GPR[RB] / rf.GPR[RA];
+    rf.GPR[RT] = rf.GPR[RA] / rf.GPR[RB];
   }
   // D Instructions
   else if (mnemonic == "addi")
@@ -348,7 +360,8 @@ void Instruction::execute(RegisterFile &rf, const SymbolTable &symbol_table)
 
   }
   else if (mnemonic == "lwz") {
-
+    auto addr = (RA ? rf.GPR[RA] : 0) + SI - data_segment_base;
+    rf.GPR[RT] = *((int *) (symbol_table.base + addr));
   }
   else if (mnemonic == "ori")
     rf.GPR[RT] = rf.GPR[RA] | SI;
@@ -362,26 +375,24 @@ void Instruction::execute(RegisterFile &rf, const SymbolTable &symbol_table)
     rf.GPR[RT] = rf.GPR[RA] ^ SI;
   // B Instructions
   else if (mnemonic == "bc")
-    rf.NIA = rf.CIA + (BD << 2);
+  {
+    /* HACK: Skip evaluating CR7 */
+    if (rf.GPR[BO] == rf.GPR[BI])
+      rf.NIA = BD << 2;
+  }
   else if (mnemonic == "bca")
     rf.NIA = BD << 2;
   // I Instructions
   else if (mnemonic == "b") {
-    rf.GPR[AA] = 0;
-    rf.NIA = (rf.GPR[LI] << 2) +rf.CIA;
-    if (rf.GPR[LK]) 
-      rf.LR = rf.CIA + 4;
+    rf.NIA = LI << 2;
   }
   else if (mnemonic == "ba") {
     rf.GPR[AA] = 1;
     rf.NIA = (rf.GPR[LI] << 2);
-    if (rf.GPR[LK])
-      rf.LR = rf.CIA + 4;
   }
   else if (mnemonic == "bl") {
-      rf.GPR[AA] = 0;
-      rf.GPR[LK] = 1;
-      rf.NIA = rf.CIA + (rf.GPR[LI]<<2);
+      rf.NIA = LI << 2;
+      rf.LR = (rf.CIA + 4) >> 2;
   }
   // SC Instructions
   else if (mnemonic == "sc"){
@@ -409,8 +420,8 @@ void Instruction::execute(RegisterFile &rf, const SymbolTable &symbol_table)
   // XL Instructions
   else if (mnemonic == "bclr"){
     rf.GPR[BH] = 0;
-    BO = 0x10100;
-    rf.NIA = rf.LR<<2;
+    BO = 0x0010100;
+    rf.NIA = rf.LR << 2;
   }
   /* std::cout<<rf; */
 }
@@ -510,9 +521,7 @@ void tokenize(std::string line, const SymbolTable &symbol_table,
     }
     else if (isalpha(word[0]))
       // If word is a label
-    {
       tokens.push_back(symbol_table.address(word));
-    }
     else if (word[0] == '-')
       tokens.push_back(-1 * stoi(word.substr(1)));
     else

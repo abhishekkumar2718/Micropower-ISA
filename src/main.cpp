@@ -30,6 +30,8 @@ int main(int argc, char *argv[])
     // Static data segments begins at global pointer i.e text_segment + offset
     auto symbol_table = SymbolTable(lines, text_segment + rf.GPR[2]);
 
+    rf.CIA = symbol_table.address("main") << 2;
+
     if (opts.debug)
       std::cout<<symbol_table<<std::endl;
 
@@ -49,6 +51,7 @@ int main(int argc, char *argv[])
     // syscall 10 => CIA := 0
     while (rf.CIA)
     {
+      std::cout<<rf.CIA<<" "<<text_segment_base<<std::endl;
       auto i = instructions[(rf.CIA - text_segment_base)/4];
 
       if (opts.step_run)

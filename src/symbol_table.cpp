@@ -82,7 +82,7 @@ int SymbolTable::address(const std::string &label) const
       if (l.section == Section::Data)
         return data_segment_base + l.offset;
       else
-        return text_segment_base + l.offset * 4;
+        return (text_segment_base / 4) + l.offset;
     }
   }
 
