@@ -1,6 +1,6 @@
 # uPower Assembler
 
-A limited Micropower ISA assembler.
+A limited Micropower ISA assembler, submitted as assignment in CoA.
 
 **Usage**
 ```
@@ -14,9 +14,9 @@ A limited Micropower ISA assembler.
 - [x] Initialize text and data segment
 - [x] Initialize registers
 - [x] Generate symbol table
-- [ ] Parse instructions
-- [ ] Encode instructions
-- [ ] Execute instructions
+- [x] Parse instructions
+- [x] Encode instructions
+- [x] Execute instructions
 
 ## Installation
 
